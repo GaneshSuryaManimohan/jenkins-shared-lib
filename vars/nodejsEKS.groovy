@@ -61,7 +61,7 @@ def call(Map configMap) {
         stage('Deploy'){
             steps{
                 script{
-                   def releaseExists = sh(script: "helm list -A --short |grep -w ${component} || true", returnStdout: true).trim()
+                   releaseExists = sh(script: "helm list -A --short |grep -w ${component} || true", returnStdout: true).trim()
                     if(releaseExists.isEmpty()){
                         echo "${component} not found, proceeding with installation"
                         sh """
