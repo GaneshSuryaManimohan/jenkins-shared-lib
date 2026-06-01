@@ -86,7 +86,7 @@ def call(Map configMap) {
         stage('Verify Deployment') {
     steps {
         script {
-            rollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project}",returnStdout: true).trim()
+            rollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project} --timeout=1m",returnStdout: true).trim()
             if (rollbackStatus.contains("successfully rolled out")) {
                 echo "Deployment successful"
             } else {
@@ -99,7 +99,7 @@ def call(Map configMap) {
                     helm rollback ${component} -n ${project} 0 // rolling back to previous release 
                     sleep(60) // waiting for a minute to stabilize the rollback
                     """
-                    postRollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project}",returnStdout: true).trim()
+                    postRollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project} --timeout=2m",returnStdout: true).trim()
                     if (postRollbackStatus.contains("successfully rolled out")){
                         error "Deployment failed, but Rollback successful, previous version is stable"
                     }
