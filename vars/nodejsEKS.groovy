@@ -60,12 +60,27 @@ def call(Map configMap) {
 
         stage('Deploy'){
             steps{
-                sh """
-                    aws eks update-kubeconfig --region ${region} --name ${project}
-                    cd helm
-                    sed -i "s/IMAGE_VERSION/${APP_VERSION}/g" values.yaml
-                    helm install ${component} . -n ${project}
-                """
+                script{
+                    releaseExists = sh(script: "helm list -A --short |grep -w ${component} || true", returnStdout: true).trim()
+                    if(releaseExists.isEmpty()){
+                        echo "${component} not found, proceeding with installation"
+                        sh """
+                            aws eks update-kubeconfig --region ${region} --name ${project}
+                            cd helm
+                            sed -i "s/IMAGE_VERSION/${APP_VERSION}/g" values.yaml
+                            helm install ${component} . -n ${project}
+                        """
+                    }
+                    else{
+                        echo "${component} found, proceeding with upgrade"
+                        sh """
+                            aws eks update-kubeconfig --region ${region} --name ${project}
+                            cd helm
+                            sed -i "s/IMAGE_VERSION/${APP_VERSION}/g" values.yaml
+                            helm upgrade ${component} . -n ${project}
+                        """
+                    }
+                }
             }
         }
 
