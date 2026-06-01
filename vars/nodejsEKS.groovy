@@ -91,14 +91,26 @@ def call(Map configMap) {
                 echo "Deployment successful"
             } else {
                 echo "Deployment failed, initiating rollback"
-                // sh """
-                // """
+                if(releaseExists.isEmpty()){
+                    error "No previous release found to rollback. since this is a fresh install"
+                }
+                else{
+                    sh """
+                    helm rollback ${component} -n ${project} 0 // rolling back to previous release 
+                    sleep(60) // waiting for a minute to stabilize the rollback
+                    """
+                    postRollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project}",returnStdout: true).trim()
+                    if (postRollbackStatus.contains("successfully rolled out")){
+                        error "Deployment failed, but Rollback successful, previous version is stable"
+                    }
+                    else{
+                        error "Deployment failed, Rollback failed, manual intervention required to fix the issue"
+                    }  
+                }
             }
         }
     }
 }
-
-
     //     stage('Nexus Artifact Upload') {
     //         steps {
     //             script{
