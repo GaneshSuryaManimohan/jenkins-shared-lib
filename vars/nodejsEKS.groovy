@@ -61,7 +61,7 @@ def call(Map configMap) {
         stage('Deploy'){
             steps{
                 script{
-                    releaseExists = sh(script: "helm list -A --short |grep -w ${component} || true", returnStdout: true).trim()
+                   def releaseExists = sh(script: "helm list -A --short |grep -w ${component} || true", returnStdout: true).trim()
                     if(releaseExists.isEmpty()){
                         echo "${component} not found, proceeding with installation"
                         sh """
@@ -86,7 +86,7 @@ def call(Map configMap) {
         stage('Verify Deployment') {
     steps {
         script {
-            rollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project} --timeout=1m", returnStatus: true)
+            def rollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project} --timeout=1m", returnStatus: true)
             
             if (rollbackStatus == 0) {
                 echo "Deployment successful"
@@ -98,7 +98,7 @@ def call(Map configMap) {
                     sh "helm rollback ${component} -n ${project} 0"
                     sleep(60)
                     
-                    postRollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project} --timeout=2m", returnStatus: true)
+                    def postRollbackStatus = sh(script: "kubectl rollout status deployment/${component} -n ${project} --timeout=3m", returnStatus: true)
                     
                     if (postRollbackStatus == 0) {
                         error "Deployment failed, but Rollback successful, previous version is stable"
